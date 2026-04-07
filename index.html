@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>代理商授权审批系统</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23C8A44E'/><text x='16' y='23' text-anchor='middle' fill='%230A0A0A' font-size='20' font-weight='800'>A</text></svg>">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0A0A0A;font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+input,textarea,button{font-family:inherit}
+#root{min-height:100vh}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useMemo } = React;
+
+const G = {
+  bg:"#0A0A0A",bg2:"#111111",bg3:"#1A1A1A",bg4:"#222222",
+  gold:"#C8A44E",goldL:"#E8D48B",goldD:"#9A7B2F",goldBg:"rgba(200,164,78,0.08)",
+  goldBg2:"rgba(200,164,78,0.15)",goldBg3:"rgba(200,164,78,0.25)",
+  text:"#F0EDE4",text2:"#A8A293",text3:"#6B6560",
+  border:"rgba(200,164,78,0.12)",border2:"rgba(200,164,78,0.25)",
+  red:"#E85454",redBg:"rgba(232,84,84,0.12)",
+  green:"#4ADE80",greenBg:"rgba(74,222,128,0.12)",
+};
+
+const regionColors = {
+  "全国":{bg:"rgba(200,164,78,0.15)",c:"#C8A44E"},
+  "东区":{bg:"rgba(96,165,250,0.15)",c:"#60A5FA"},
+  "北一区":{bg:"rgba(167,139,250,0.15)",c:"#A78BFA"},
+  "北二区":{bg:"rgba(192,132,252,0.15)",c:"#C084FC"},
+  "华南区":{bg:"rgba(74,222,128,0.15)",c:"#4ADE80"},
+  "西南区":{bg:"rgba(251,146,60,0.15)",c:"#FB923C"},
+};
+const REGIONS=["全国","东区","北一区","北二区","华南区","西南区"];
+const tierDefs=[
+  {name:"战略级",min:3000,color:"#FFD700",rule:"3000万以上"},
+  {name:"金牌",min:2000,color:"#C8A44E",rule:"2000-3000万"},
+  {name:"银牌",min:1000,color:"#C0C0C0",rule:"1000-2000万"},
+  {name:"铜牌",min:500,color:"#CD7F32",rule:"500-1000万"},
+  {name:"新锐之星",min:100,color:"#60A5FA",rule:"100-500万"},
+];
+const approvalChains={
+  "西南区":{type:"long",sales:"一线销售/主管",regional:"黄占良（大区经理）",senior:"孔颖佳（高级大区经理）",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
+  "东区":{type:"short",sales:"一线经理",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
+  "北一区":{type:"short",sales:"一线经理",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
+  "北二区":{type:"short",sales:"一线经理",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
+  "华南区":{type:"long",sales:"一线销售/主管",regional:"黄涛（大区经理）",senior:"何军（高级大区经理）",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
+};
+const typeDefs=["一级代理商","二级代理商","配送端口"];
+const yearDefs=[
+  {label:"10年以上",check:y=>y>=10},
+  {label:"5年以上",check:y=>y>=5&&y<10},
+  {label:"2年以上",check:y=>y>=2&&y<5},
+  {label:"新经销商",check:y=>y<2},
+];
+const allDealers=[
+  {n:"成都诚佳欣浩",c:"吴超",r:"西南区",y:5,rev:2200,type:"一级代理商",h:8},
+  {n:"重庆康瑞达",c:"刘洋",r:"西南区",y:3,rev:800,type:"一级代理商",h:5},
+  {n:"昆明德润",c:"陈飞",r:"西南区",y:1,rev:350,type:"二级代理商",h:3},
+  {n:"贵阳恒信",c:"周勇",r:"西南区",y:8,rev:1600,type:"一级代理商",h:7},
+  {n:"上海吴铠科贸",c:"吴铠",r:"东区",y:6,rev:3200,type:"一级代理商",h:12},
+  {n:"南京博远",c:"张磊",r:"东区",y:2,rev:1100,type:"二级代理商",h:6},
+  {n:"杭州鑫诺",c:"周华",r:"东区",y:12,rev:4500,type:"一级代理商",h:18},
+  {n:"北京中盛",c:"王刚",r:"北一区",y:7,rev:2800,type:"一级代理商",h:15},
+  {n:"天津仁合",c:"李强",r:"北一区",y:11,rev:3500,type:"一级代理商",h:14},
+  {n:"石家庄百瑞",c:"孙明",r:"北二区",y:4,rev:1500,type:"二级代理商",h:7},
+  {n:"沈阳恒达",c:"马超",r:"北二区",y:8,rev:2100,type:"一级代理商",h:10},
+  {n:"广州信达",c:"林峰",r:"华南区",y:4,rev:1800,type:"一级代理商",h:9},
+  {n:"深圳瑞康",c:"黄涛",r:"华南区",y:2,rev:600,type:"配送端口",h:4},
+  {n:"武汉合众",c:"赵明",r:"华南区",y:1,rev:250,type:"配送端口",h:2},
+];
+
+function getTier(rev){for(const t of tierDefs)if(rev>=t.min)return t;return{name:"待评定",color:G.text3};}
+function Badge({children,color,bg}){return <span style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:bg||"rgba(200,164,78,0.12)",color:color||G.gold,fontWeight:600,whiteSpace:"nowrap",display:"inline-block"}}>{children}</span>;}
+function RegionBadge({region}){const c=regionColors[region]||regionColors["全国"];return <Badge color={c.c} bg={c.bg}>{region}</Badge>;}
+function TierBadge({rev}){const t=getTier(rev);return <Badge color={t.color} bg={t.color+"22"}>{t.name}</Badge>;}
+function Card({children,style,onClick,danger}){return <div onClick={onClick} style={{background:G.bg2,border:"1px solid "+(danger?"rgba(232,84,84,0.25)":G.border),borderRadius:12,padding:16,marginBottom:10,cursor:onClick?"pointer":"default",...style}}>{children}</div>;}
+function Metric({label,value,color}){return <div style={{background:G.bg3,borderRadius:8,padding:"10px 12px",border:"1px solid "+G.border}}><div style={{fontSize:11,color:G.text3}}>{label}</div><div style={{fontSize:20,fontWeight:700,marginTop:4,color:color||G.goldL}}>{value}</div></div>;}
+function Divider(){return <div style={{height:1,background:G.border,margin:"14px 0"}}/>;}
+function TabBar({items,active,onSelect}){return <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:12}}>{items.map((t,i)=><div key={i} onClick={()=>onSelect(i)} style={{padding:"6px 14px",fontSize:12,borderRadius:8,cursor:"pointer",background:active===i?G.goldBg2:"transparent",color:active===i?G.goldL:G.text3,border:"1px solid "+(active===i?G.border2:G.border),fontWeight:active===i?600:400}}>{t}</div>)}</div>;}
+
+function FlowPage(){
+  const[region,setRegion]=useState(4);
+  const curR=REGIONS.slice(1)[region];
+  const chain=approvalChains[curR]||approvalChains["西南区"];
+  const isLong=chain.type==="long";
+
+  const steps=[
+    {title:"经销商发起申请",sub:"选医院 → 选产品 → 填数据 → 提交",color:G.gold,bgColor:G.goldBg2,borderColor:G.border2,icon:"📋"},
+    {title:"销售运营核验",sub:"系统自动匹配历史植入数据，标注差异",color:"#60A5FA",bgColor:"rgba(96,165,250,0.12)",borderColor:"rgba(96,165,250,0.25)",icon:"🔍",auto:true},
+    {title:chain.sales,sub:"确认经销商实际情况，填写意见",color:"#FB923C",bgColor:"rgba(251,146,60,0.1)",borderColor:"rgba(251,146,60,0.25)",icon:"👤",eye:isLong?"大区经理及以上同步可见":"全国经理及销售总监同步可见",note:"视区域和销售成熟度而定，可由上级配置跳过"},
+  ];
+  if(isLong){
+    steps.push({title:chain.regional,sub:"审核数据合理性，逐产品审批",color:"#A78BFA",bgColor:"rgba(167,139,250,0.1)",borderColor:"rgba(167,139,250,0.25)",icon:"👔",eye:"高级大区经理及以上同步可见"});
+    steps.push({title:chain.senior,sub:"复核大区整体授权合理性",color:"#C084FC",bgColor:"rgba(192,132,252,0.1)",borderColor:"rgba(192,132,252,0.25)",icon:"🎖️",eye:"全国经理及销售总监同步可见"});
+  }
+  steps.push({title:chain.national,sub:isLong?"全国层面把关":"审核数据合理性，逐产品审批",color:"#4ADE80",bgColor:"rgba(74,222,128,0.1)",borderColor:"rgba(74,222,128,0.25)",icon:"🌐",eye:"销售总监同步可见"});
+  steps.push({title:chain.director,sub:"最终审批确认",color:"#FFD700",bgColor:"rgba(255,215,0,0.08)",borderColor:"rgba(255,215,0,0.2)",icon:"👑"});
+  steps.push({title:"授权生效 → 通知商务部",sub:"系统自动生成授权书，自动通知商务部发放授权文件给经销商",color:G.green,bgColor:G.greenBg,borderColor:"rgba(74,222,128,0.25)",icon:"✅",auto:true});
+
+  const allViewers=isLong?[chain.regional,chain.senior,chain.national,chain.director].map(s=>s.split("（")[0]).join("、"):[chain.national,chain.director].map(s=>s.split("（")[0]).join("、");
+
+  return <div>
+    <div style={{background:G.goldBg,border:"1px solid "+G.border,borderRadius:10,padding:"12px 16px",marginBottom:14}}>
+      <div style={{fontSize:13,fontWeight:700,color:G.goldL,marginBottom:4}}>核心规则：全链路透明 + 分产品授权</div>
+      <div style={{fontSize:12,color:G.gold,lineHeight:1.7}}>
+        • 首次系统化管理，未来需按产品线管理，故要求<b>逐医院、逐产品</b>独立审批<br/>
+        • 申请一旦发起，所有上级实时可见，任何层级无法私自拦截<br/>
+        • 各区域组织架构不同，审批层级因区域而异（点击上方大区标签查看）<br/>
+        • 一线驳回时系统自动通知上级，上级如认为不合理可发起重新审批
+      </div>
+    </div>
+    <div style={{fontSize:12,color:G.text3,marginBottom:8}}>选择大区查看对应审批链（各区域组织架构不同）：</div>
+    <TabBar items={REGIONS.slice(1)} active={region} onSelect={setRegion}/>
+    <div style={{background:G.bg3,border:"1px solid "+G.border,borderRadius:8,padding:"8px 14px",fontSize:12,color:G.text2,marginBottom:12}}>
+      {isLong
+        ?<span>🏢 <b style={{color:G.goldL}}>{curR}</b>：一线销售 → 大区经理 → 高级大区经理 → 全国经理 → 销售总监（共5级审批）</span>
+        :<span>🏢 <b style={{color:G.goldL}}>{curR}</b>：一线经理 → 全国经理 → 销售总监（共3级审批）</span>
+      }
+    </div>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:0,padding:"10px 0"}}>
+      {steps.map((s,i)=><div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%"}}>
+        <div style={{background:s.bgColor,border:"1px solid "+s.borderColor,borderRadius:12,padding:"14px 20px",width:"100%",maxWidth:420}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:20}}>{s.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14,color:s.color}}>{s.title}</div>
+              <div style={{fontSize:12,color:s.color+"99",marginTop:3}}>{s.sub}</div>
+              {s.eye&&<div style={{fontSize:11,color:"#A78BFA",marginTop:4}}>👁 {s.eye}</div>}
+              {s.note&&<div style={{fontSize:11,color:G.gold,marginTop:3,fontStyle:"italic"}}>⚙ {s.note}</div>}
+              {s.auto&&<Badge color="#60A5FA" bg="rgba(96,165,250,0.15)">自动</Badge>}
+            </div>
+          </div>
+        </div>
+        {i<steps.length-1&&<div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"2px 0"}}>
+          <div style={{width:2,height:16,background:G.border2}}/>
+          <div style={{fontSize:10,color:G.text3}}>{i===0?"提交":i===1?"数据就绪":"通过"}</div>
+          <div style={{width:2,height:8,background:G.border2}}/>
+        </div>}
+      </div>)}
+    </div>
+    <Card style={{marginTop:12}}>
+      <div style={{fontSize:13,fontWeight:700,color:G.goldL,marginBottom:8}}>📌 制度说明</div>
+      <div style={{fontSize:12,color:G.text2,lineHeight:1.8}}>
+        <b style={{color:G.goldL}}>1. 全程可见：</b>申请提交后，{allViewers}均可实时查看进度和内容，任何层级无法私自拦截。<br/>
+        <b style={{color:G.goldL}}>2. 驳回与重新审批：</b>一线驳回时系统自动通知上级，看板标记红色预警。上级如认为驳回不合理，可发起重新审批。<br/>
+        <b style={{color:G.goldL}}>3. 超时提醒：</b>任一节点超过48小时未审批，自动向该审批人及其上级发送催办通知。<br/>
+        <b style={{color:G.goldL}}>4. 一线审批弹性：</b>视区域和销售成熟度而定，上级可配置部分区域跳过一线审批环节。<br/>
+        <b style={{color:G.goldL}}>5. 自动通知商务：</b>终审通过后，系统自动通知商务部制作并发放正式授权文件给经销商。<br/>
+        <b style={{color:G.goldL}}>6. 区域差异：</b>西南区/华南区为5级审批（含大区经理、高级大区经理），东区/北一区/北二区为3级审批（一线经理直接对接全国经理）。
+      </div>
+    </Card>
+  </div>;
+}
+
+function HomePage({onNav}){
+  const[region,setRegion]=useState(0);
+  const curR=REGIONS[region];
+  const filtered=curR==="全国"?allDealers:allDealers.filter(d=>d.r===curR);
+  const tierCounts=tierDefs.map(t=>({...t,count:filtered.filter(d=>getTier(d.rev).name===t.name).length}));
+  const typeCounts=typeDefs.map(t=>({name:t,count:filtered.filter(d=>d.type===t).length}));
+  const yearCounts=yearDefs.map(y=>({...y,count:filtered.filter(d=>y.check(d.y)).length}));
+  return <div>
+    <TabBar items={REGIONS} active={region} onSelect={setRegion}/>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+      {typeCounts.map((t,i)=><Metric key={i} label={t.name} value={t.count}/>)}
+    </div>
+    <Card>
+      <div style={{fontSize:12,color:G.text2,fontWeight:600,marginBottom:10}}>{curR==="全国"?"全国":curR}经销商分级（按年度订货额）</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
+        {tierCounts.map((t,i)=><div key={i} style={{background:t.color+"11",border:"1px solid "+t.color+"33",borderRadius:8,padding:"10px 8px",textAlign:"center"}}>
+          <div style={{fontSize:22,fontWeight:700,color:t.color}}>{t.count}</div>
+          <div style={{fontSize:11,color:t.color,marginTop:2,fontWeight:600}}>{t.name}</div>
+          <div style={{fontSize:10,color:G.text3,marginTop:2}}>{t.rule}</div>
+        </div>)}
+      </div>
+    </Card>
+    <Card>
+      <div style={{fontSize:12,color:G.text2,fontWeight:600,marginBottom:10}}>合作年限分布</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+        {yearCounts.map((y,i)=><div key={i} style={{background:G.goldBg,border:"1px solid "+G.border,borderRadius:8,padding:"10px 8px",textAlign:"center"}}>
+          <div style={{fontSize:22,fontWeight:700,color:G.goldL}}>{y.count}</div>
+          <div style={{fontSize:11,color:G.text2,marginTop:2}}>{y.label}</div>
+        </div>)}
+      </div>
+    </Card>
+    <div style={{border:"1px solid "+G.border,borderRadius:10,overflow:"hidden"}}>
+      <div style={{display:"grid",gridTemplateColumns:"2.5fr 0.8fr 0.8fr 0.8fr 0.8fr 0.7fr",padding:"8px 10px",fontSize:11,fontWeight:600,color:G.text3,background:G.bg3}}>
+        <span>经销商</span><span>大区</span><span>级别</span><span>合作</span><span>年订货额</span><span>医院</span>
+      </div>
+      {filtered.map((d,i)=><div key={i} onClick={()=>onNav(2)} style={{display:"grid",gridTemplateColumns:"2.5fr 0.8fr 0.8fr 0.8fr 0.8fr 0.7fr",padding:"10px 10px",fontSize:13,borderTop:"1px solid "+G.border,cursor:"pointer",alignItems:"center"}}>
+        <div><div style={{fontWeight:600,color:G.text}}>{d.n}</div><div style={{fontSize:11,color:G.text3}}>{d.c}</div></div>
+        <span><RegionBadge region={d.r}/></span>
+        <span><TierBadge rev={d.rev}/></span>
+        <span style={{color:G.text2}}>{d.y}年</span>
+        <span style={{color:G.goldL,fontWeight:600}}>{d.rev}万</span>
+        <span style={{color:G.text2}}>{d.h}家</span>
+      </div>)}
+    </div>
+  </div>;
+}
+
+function SubmitPage(){
+  const init=[
+    {n:"Fitaya滤器(III代)",cap:"",a:"",b:"",target:""},
+    {n:"Aelix三环抓捕器",cap:"",a:"",b:"",target:""},
+    {n:"Yuranos二代腹主",cap:"",a:"",b:"",target:""},
+    {n:"Ankura II胸主",cap:"",a:"",b:"",target:""},
+    {n:"FiQure滤器回收套件",cap:"",a:"",b:"",target:""},
+    {n:"Fustar可调弯鞘",cap:"",a:"",b:"",target:""},
+  ];
+  const[products,setProducts]=useState(init);
+  const[hospIdx,setHospIdx]=useState(0);
+  const hosps=["达州市中心医院","遂宁市中心医院","资阳市中心医院"];
+  const upd=useCallback((i,f,v)=>{setProducts(p=>{const n=[...p];n[i]={...n[i],[f]:v};return n;});},[]);
+
+  const calc=useMemo(()=>products.map(p=>{
+    const a=parseFloat(p.a)||0,b=parseFloat(p.b)||0,t=parseFloat(p.target)||0,cap=parseFloat(p.cap)||0;
+    return{growth:a>0?(b-a)/a*100:null,tGrowth:b>0?(t-b)/b*100:null,share:cap>0&&t>0?t/cap*100:null};
+  }),[products]);
+
+  const totals=useMemo(()=>{
+    const a=products.reduce((s,p)=>s+(parseFloat(p.a)||0),0);
+    const b=products.reduce((s,p)=>s+(parseFloat(p.b)||0),0);
+    const t=products.reduce((s,p)=>s+(parseFloat(p.target)||0),0);
+    return{a,b,t,growth:a>0?(b-a)/a*100:null,tGrowth:b>0?(t-b)/b*100:null};
+  },[products]);
+
+  const fg=v=>v===null?"—":(v>=0?"+":"")+v.toFixed(1)+"%";
+  const gc=v=>v===null?G.text3:v>=0?G.green:G.red;
+  const iS=accent=>({width:48,height:28,fontSize:12,padding:"0 6px",borderRadius:6,border:"1px solid "+(accent?G.border2:G.border),background:G.bg3,color:accent?G.gold:G.text,textAlign:"center",fontWeight:accent?600:400});
+
+  return <Card>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:10}}>
+      <div>
+        <div style={{fontWeight:700,fontSize:16,color:G.text}}>新建授权申请</div>
+        <div style={{fontSize:12,color:G.text3,marginTop:3}}>成都诚佳欣浩商贸有限公司 · 吴超</div>
+      </div>
+      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <TierBadge rev={2200}/><RegionBadge region="西南区"/><span style={{fontSize:10,color:G.text3}}>← 自动匹配</span>
+      </div>
+    </div>
+    <Divider/>
+    <div style={{fontSize:12,color:G.text3,marginBottom:6}}>第一步：选择医院（逐家提交）</div>
+    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
+      {hosps.map((h,i)=><span key={i} style={{fontSize:12,padding:"5px 12px",borderRadius:8,background:G.goldBg2,color:G.goldL}}>{h} ×</span>)}
+      <span style={{fontSize:12,padding:"5px 12px",borderRadius:8,border:"1px dashed "+G.border2,color:G.text3,cursor:"pointer"}}>+ 添加</span>
+    </div>
+    <Divider/>
+    <div style={{fontSize:12,color:G.text3,marginBottom:8}}>第二步：填写产品数据（可留空，由销售或系统自动补充）</div>
+    <div style={{display:"flex",gap:4,marginBottom:10}}>
+      {hosps.map((h,i)=><div key={i} onClick={()=>setHospIdx(i)} style={{padding:"5px 12px",fontSize:12,borderRadius:8,cursor:"pointer",background:hospIdx===i?G.goldBg2:"transparent",color:hospIdx===i?G.goldL:G.text3,border:"1px solid "+(hospIdx===i?G.border2:G.border),fontWeight:hospIdx===i?600:400}}>{h}</div>)}
+    </div>
+    <div style={{background:G.goldBg,border:"1px solid "+G.border,borderRadius:8,padding:"8px 12px",fontSize:12,color:G.gold,marginBottom:10,lineHeight:1.6}}>
+      <b>总容量</b> = 该医院该术式所有品牌年植入总量（含竞品），用于计算我司占有率。留空由运营补充。
+    </div>
+    <div style={{border:"1px solid "+G.border,borderRadius:10,overflow:"hidden"}}>
+      <div style={{display:"grid",gridTemplateColumns:"2fr 0.9fr 0.9fr 0.9fr 0.8fr 0.9fr 0.8fr 0.8fr",padding:"8px 8px",fontSize:11,fontWeight:600,color:G.text3,background:G.bg3}}>
+        <span>产品</span><span>总容量</span><span>2024植入</span><span>2025植入</span><span>同比增长</span><span>2026目标</span><span>目标增长</span><span>占有率</span>
+      </div>
+      {products.map((p,i)=><div key={i} style={{display:"grid",gridTemplateColumns:"2fr 0.9fr 0.9fr 0.9fr 0.8fr 0.9fr 0.8fr 0.8fr",padding:"8px 8px",fontSize:13,borderTop:"1px solid "+G.border,alignItems:"center"}}>
+        <span style={{color:G.text,fontSize:12}}>{p.n}</span>
+        <span><input value={p.cap} onChange={e=>upd(i,"cap",e.target.value)} placeholder="—" style={iS(true)}/></span>
+        <span><input value={p.a} onChange={e=>upd(i,"a",e.target.value)} placeholder="—" style={iS()}/></span>
+        <span><input value={p.b} onChange={e=>upd(i,"b",e.target.value)} placeholder="—" style={iS()}/></span>
+        <span style={{color:gc(calc[i].growth),fontSize:11,fontWeight:600}}>{fg(calc[i].growth)}</span>
+        <span><input value={p.target} onChange={e=>upd(i,"target",e.target.value)} placeholder="—" style={iS()}/></span>
+        <span style={{color:gc(calc[i].tGrowth),fontSize:11,fontWeight:600}}>{fg(calc[i].tGrowth)}</span>
+        <span style={{color:"#A78BFA",fontSize:12,fontWeight:600}}>{calc[i].share!==null?calc[i].share.toFixed(1)+"%":"—"}</span>
+      </div>)}
+      <div style={{display:"grid",gridTemplateColumns:"2fr 0.9fr 0.9fr 0.9fr 0.8fr 0.9fr 0.8fr 0.8fr",padding:"8px 8px",fontSize:13,borderTop:"1px solid "+G.border2,background:G.bg3,fontWeight:600,alignItems:"center"}}>
+        <span style={{color:G.goldL}}>合计</span><span style={{color:G.text3}}>—</span>
+        <span style={{color:G.text}}>{totals.a||"—"}</span><span style={{color:G.text}}>{totals.b||"—"}</span>
+        <span style={{color:gc(totals.growth),fontSize:11}}>{fg(totals.growth)}</span>
+        <span style={{color:G.text}}>{totals.t||"—"}</span>
+        <span style={{color:gc(totals.tGrowth),fontSize:11}}>{fg(totals.tGrowth)}</span>
+        <span style={{color:G.text3}}>—</span>
+      </div>
+    </div>
+    <div style={{marginTop:12}}>
+      <div style={{fontSize:12,color:G.text3,marginBottom:4}}>授权理由</div>
+      <textarea placeholder="可留空由销售补充..." style={{width:"100%",height:50,fontSize:12,padding:8,borderRadius:8,border:"1px solid "+G.border,background:G.bg3,color:G.text,fontFamily:"inherit",resize:"vertical"}}/>
+    </div>
+    <div style={{marginTop:14,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+      <span style={{fontSize:12,color:G.text3}}>审批链：一线销售/主管 → 黄占良 → 孔颖佳 → 周小杰 → 吴璟谊</span>
+      <button style={{padding:"8px 22px",borderRadius:8,border:"none",background:G.gold,color:G.bg,fontSize:13,fontWeight:700,cursor:"pointer"}}>提交（3家医院）</button>
+    </div>
+  </Card>;
+}
+
+function BoardPage({onNav}){
+  const[region,setRegion]=useState(0);
+  const items=[
+    {h:"达州市中心医院",p:"Fitaya滤器(III代)",d:"成都诚佳欣浩",r:"西南区",s:"所辖销售审批中",st:"pend",t:"03-20"},
+    {h:"遂宁市中心医院",p:"Yuranos二代腹主",d:"成都诚佳欣浩",r:"西南区",s:"黄占良审批中",st:"pend",t:"03-19"},
+    {h:"南京鼓楼医院",p:"Ankura胸主",d:"南京博远",r:"东区",s:"周小杰审批中",st:"pend",t:"03-17"},
+    {h:"北京安贞医院",p:"G-iliac主体",d:"北京中盛",r:"北一区",s:"吴璟谊审批中",st:"pend",t:"03-14"},
+    {h:"内江市中医医院",p:"FiQure回收套件",d:"成都诚佳欣浩",r:"西南区",s:"一线驳回",st:"no",t:"03-16"},
+    {h:"叙永县人民医院",p:"Fitaya滤器",d:"成都诚佳欣浩",r:"西南区",s:"已通过",st:"ok",t:"03-10"},
+  ];
+  const curR=REGIONS[region];
+  const fi=curR==="全国"?items:items.filter(x=>x.r===curR);
+  return <div>
+    <div style={{background:G.goldBg,border:"1px solid "+G.border,borderRadius:8,padding:"10px 14px",fontSize:12,color:G.gold,marginBottom:12}}>
+      当前角色：<b>吴璟谊（销售总监）</b> — 所有大区、所有层级实时可见
+    </div>
+    <TabBar items={REGIONS} active={region} onSelect={setRegion}/>
+    {fi.map((it,i)=><Card key={i} onClick={()=>onNav(4)}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontWeight:600,fontSize:14,color:G.text}}>{it.h} · {it.p}</div>
+          <div style={{fontSize:12,color:G.text3,marginTop:3}}>{it.d} · <RegionBadge region={it.r}/> · {it.t}</div>
+        </div>
+        <Badge color={it.st==="no"?G.red:it.st==="ok"?G.green:G.gold} bg={it.st==="no"?G.redBg:it.st==="ok"?G.greenBg:G.goldBg}>
+          {it.s}{it.st==="no"?" ⚠":""}
+        </Badge>
+      </div>
+    </Card>)}
+  </div>;
+}
+
+function DetailPage(){
+  const chain=approvalChains["西南区"];
+  const steps=[
+    {name:"运营核验",sub:"系统自动 · 03-20 10:30 · 数据一致",st:"done"},
+    {name:chain.sales,sub:"审批中 · 上级全部可见",st:"cur"},
+    {name:chain.regional,sub:"等待中",st:"f"},
+    {name:chain.senior,sub:"等待中",st:"f"},
+    {name:chain.national,sub:"等待中",st:"f"},
+    {name:chain.director,sub:"最终审批",st:"f"},
+  ];
+  return <Card>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:12}}>
+      <div>
+        <div style={{fontWeight:700,fontSize:17,color:G.text}}>达州市中心医院 · Fitaya滤器(III代)</div>
+        <div style={{fontSize:12,color:G.text3,marginTop:4,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+          成都诚佳欣浩 · <TierBadge rev={2200}/> <RegionBadge region="西南区"/> · 合作5年
+        </div>
+      </div>
+      <Badge color={G.gold} bg={G.goldBg}>所辖销售审批中</Badge>
+    </div>
+    <Divider/>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+      <div style={{background:G.bg3,borderRadius:8,padding:"10px 12px",border:"1px solid "+G.border}}>
+        <div style={{fontSize:11,color:G.text3}}>经销商填报</div>
+        <div style={{fontSize:14,fontWeight:600,marginTop:4,color:G.text}}>24:45 → 25:62 → 26:80</div>
+        <div style={{fontSize:12,color:G.green,marginTop:4}}>+37.8% → +29.0%</div>
+      </div>
+      <div style={{background:G.greenBg,borderRadius:8,padding:"10px 12px"}}>
+        <div style={{fontSize:11,color:G.green,fontWeight:600}}>运营核验</div>
+        <div style={{fontSize:14,fontWeight:600,marginTop:4,color:G.green}}>24:45 → 25:61</div>
+        <div style={{fontSize:12,color:G.green,marginTop:4}}>✓ 一致</div>
+      </div>
+      <div style={{background:G.goldBg,borderRadius:8,padding:"10px 12px",border:"1px solid "+G.border}}>
+        <div style={{fontSize:11,color:G.gold,fontWeight:600}}>总容量（全品牌）</div>
+        <div style={{fontSize:14,fontWeight:600,marginTop:4,color:G.goldL}}>350台/年</div>
+        <div style={{fontSize:12,color:G.gold,marginTop:4}}>占有率 17.7% → 22.9%</div>
+      </div>
+    </div>
+    <Divider/>
+    <div style={{fontSize:13,fontWeight:600,color:G.text,marginBottom:10}}>审批链</div>
+    <div style={{position:"relative",paddingLeft:24,margin:"10px 0"}}>
+      <div style={{position:"absolute",left:8,top:6,bottom:6,width:2,background:G.border}}/>
+      {steps.map((s,i)=><div key={i} style={{position:"relative",marginBottom:16}}>
+        <div style={{position:"absolute",left:-20,top:4,width:12,height:12,borderRadius:"50%",border:"2px solid "+(s.st==="done"?G.green:s.st==="cur"?G.gold:G.text3),background:s.st==="done"?G.greenBg:s.st==="cur"?G.goldBg:G.bg3}}/>
+        <div style={{fontSize:13,fontWeight:600,color:s.st==="f"?G.text3:G.text}}>
+          {s.name} {s.st==="done"&&<Badge color={G.green} bg={G.greenBg}>完成</Badge>}{s.st==="cur"&&<Badge color={G.gold} bg={G.goldBg}>审批中</Badge>}
+        </div>
+        <div style={{fontSize:11,color:G.text3,marginTop:2}}>{s.sub}</div>
+      </div>)}
+    </div>
+    <Divider/>
+    <div style={{background:G.bg3,borderRadius:10,padding:14,border:"1px solid "+G.border}}>
+      <textarea placeholder="审批意见..." style={{width:"100%",height:40,fontSize:13,padding:8,borderRadius:8,border:"1px solid "+G.border,background:G.bg,color:G.text,fontFamily:"inherit",marginBottom:8}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:11,color:G.text3}}>驳回自动通知黄占良（大区经理）</span>
+        <div style={{display:"flex",gap:8}}>
+          <button style={{padding:"6px 16px",borderRadius:8,border:"none",background:G.redBg,color:G.red,fontSize:12,fontWeight:600,cursor:"pointer"}}>驳回</button>
+          <button style={{padding:"6px 16px",borderRadius:8,border:"none",background:G.greenBg,color:G.green,fontSize:12,fontWeight:600,cursor:"pointer"}}>通过</button>
+        </div>
+      </div>
+    </div>
+  </Card>;
+}
+
+function MyViewPage({onNav}){
+  const rs=[{r:"东区",a:8,p:3,x:0,ok:5},{r:"北一区",a:6,p:2,x:1,ok:3},{r:"北二区",a:4,p:1,x:0,ok:3},{r:"华南区",a:5,p:2,x:1,ok:2},{r:"西南区",a:12,p:5,x:1,ok:6}];
+  return <div>
+    <div style={{background:G.goldBg,border:"1px solid "+G.border,borderRadius:8,padding:"10px 14px",fontSize:12,color:G.gold,marginBottom:12,lineHeight:1.6}}>
+      <b>全链路 — 吴璟谊（销售总监）视角</b><br/>所有大区实时汇总，一线驳回自动预警
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
+      <Metric label="待审批" value="34"/><Metric label="一线驳回" value="3" color={G.red}/><Metric label="超时>48h" value="5" color="#FB923C"/><Metric label="本月通过" value="47" color={G.green}/>
+    </div>
+    <div style={{border:"1px solid "+G.border,borderRadius:10,overflow:"hidden",marginBottom:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",padding:"8px 10px",fontSize:11,fontWeight:600,color:G.text3,background:G.bg3}}>
+        <span>大区</span><span>总数</span><span>审批中</span><span>一线驳回</span><span>已通过</span>
+      </div>
+      {rs.map((s,i)=><div key={i} onClick={()=>onNav(3)} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",padding:"10px 10px",fontSize:13,borderTop:"1px solid "+G.border,cursor:"pointer"}}>
+        <span><RegionBadge region={s.r}/></span>
+        <span style={{color:G.text}}>{s.a}</span><span style={{color:G.text2}}>{s.p}</span>
+        <span style={{color:s.x?G.red:G.text3,fontWeight:s.x?700:400}}>{s.x}</span>
+        <span style={{color:G.green}}>{s.ok}</span>
+      </div>)}
+    </div>
+    <div style={{fontSize:14,fontWeight:700,color:G.red,marginBottom:8}}>⚠ 一线驳回预警</div>
+    <Card danger>
+      <div style={{fontWeight:600,fontSize:13,color:G.text}}>内江市中医医院 · FiQure滤器回收套件</div>
+      <div style={{fontSize:12,color:G.text3,marginTop:3}}>成都诚佳欣浩 · <RegionBadge region="西南区"/> · 一线销售 驳回 03-16</div>
+      <div style={{fontSize:12,color:G.red,marginTop:3}}>理由："该院合作意愿不强"</div>
+      <div style={{marginTop:8,display:"flex",gap:8}}>
+        <button onClick={()=>onNav(4)} style={{padding:"5px 14px",borderRadius:8,border:"1px solid "+G.border2,background:"transparent",color:G.goldL,fontSize:12,cursor:"pointer"}}>查看详情</button>
+        <button style={{padding:"5px 14px",borderRadius:8,border:"none",background:G.redBg,color:G.red,fontSize:12,fontWeight:600,cursor:"pointer"}}>发起重新审批</button>
+      </div>
+    </Card>
+  </div>;
+}
+
+function App(){
+  const[tab,setTab]=useState(0);
+  const TABS=["审批流程","首页总览","经销商提交","审批看板","审批详情","我的视野"];
+  return <div style={{background:G.bg,minHeight:"100vh",padding:"20px 16px",fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>
+    <div style={{maxWidth:900,margin:"0 auto"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <div style={{width:38,height:38,borderRadius:8,background:"linear-gradient(135deg,"+G.gold+","+G.goldD+")",display:"flex",alignItems:"center",justifyContent:"center",color:G.bg,fontWeight:800,fontSize:17}}>A</div>
+        <div>
+          <div style={{fontSize:18,fontWeight:700,color:G.text,letterSpacing:0.5}}>代理商授权审批系统</div>
+          <div style={{fontSize:11,color:G.text3}}>Authorization Management System</div>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:5,marginBottom:18,flexWrap:"wrap"}}>
+        {TABS.map((t,i)=><div key={i} onClick={()=>setTab(i)} style={{
+          padding:"7px 16px",fontSize:13,borderRadius:10,cursor:"pointer",
+          background:tab===i?G.gold:"transparent",color:tab===i?G.bg:G.text3,
+          fontWeight:tab===i?700:400,border:"1px solid "+(tab===i?G.gold:G.border),
+        }}>{t}</div>)}
+      </div>
+      {tab===0&&<FlowPage/>}
+      {tab===1&&<HomePage onNav={setTab}/>}
+      {tab===2&&<SubmitPage/>}
+      {tab===3&&<BoardPage onNav={setTab}/>}
+      {tab===4&&<DetailPage/>}
+      {tab===5&&<MyViewPage onNav={setTab}/>}
+    </div>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
