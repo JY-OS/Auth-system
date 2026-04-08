@@ -336,14 +336,13 @@ function BoardPage({onNav}){
 function DetailPage(){
   const chain=approvalChains["西南区"];
   const steps=[
-    {name:"运营核验",sub:"系统自动 · 03-20 10:30 · 数据一致",st:"done"},
-    {name:chain.sales,sub:"审批中 · 上级全部可见",st:"cur"},
-    chain.area?{name:chain.area,sub:"等待中",st:"f"}:null,
-    {name:chain.regional,sub:"等待中",st:"f"},
-    {name:chain.senior,sub:"等待中",st:"f"},
-    {name:chain.national,sub:"等待中",st:"f"},
-    {name:chain.director,sub:"最终审批",st:"f"},
-  ].filter(Boolean);
+    {name:"经销商/一线销售 发起申请",sub:"成都诚佳欣浩 · 吴超 · 03-20 09:00",st:"done"},
+    {name:"销售运营复核",sub:"系统自动匹配历史数据 · 03-20 10:30 · 数据一致",st:"done"},
+    {name:"黄占良（大区经理）",sub:"审批中 · 上级全部可见",st:"cur"},
+    {name:"孔颖佳（高级大区经理）",sub:"等待中",st:"f"},
+    {name:"周小杰（全国经理）",sub:"等待中",st:"f"},
+    {name:"吴璟谊（销售总监）",sub:"最终审批",st:"f"},
+  ];
   return <Card>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:12}}>
       <div>
@@ -388,7 +387,7 @@ function DetailPage(){
     <div style={{background:G.bg3,borderRadius:10,padding:14,border:"1px solid "+G.border}}>
       <textarea placeholder="审批意见..." style={{width:"100%",height:40,fontSize:13,padding:8,borderRadius:8,border:"1px solid "+G.border,background:G.bg,color:G.text,fontFamily:"inherit",marginBottom:8}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:11,color:G.text3}}>驳回自动通知刘经理（区域经理）及以上</span>
+        <span style={{fontSize:11,color:G.text3}}>驳回自动通知孔颖佳（高级大区经理）及以上</span>
         <div style={{display:"flex",gap:8}}>
           <button style={{padding:"6px 16px",borderRadius:8,border:"none",background:G.redBg,color:G.red,fontSize:12,fontWeight:600,cursor:"pointer"}}>驳回</button>
           <button style={{padding:"6px 16px",borderRadius:8,border:"none",background:G.greenBg,color:G.green,fontSize:12,fontWeight:600,cursor:"pointer"}}>通过</button>
