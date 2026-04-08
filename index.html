@@ -210,17 +210,36 @@ function HomePage({onNav}){
 }
 
 function SubmitPage(){
+  const allHosps=["达州市中心医院","达州元达联合医院","遂宁市中心医院","绵阳市第三人民医院","叙永县人民医院","资阳市第一人民医院","资阳市中心医院","内江市中医医院","成都大学附属医院","大竹县人民医院","乐山市人民医院","邛崃市医疗中心医院","西南医科大学附属中医医院","宜宾市第二人民医院","京东方医院","德昌县人民医院","雅安市人民医院","安岳县中医医院","乐山市昶康医院","天全县中医医院","四川省建筑医院","成都市第一骨科医院","雅安市中医医院"];
   const init=[
-    {n:"Fitaya滤器(III代)",cap:"",a:"",b:"",target:""},
+    {n:"Aegisy滤器（I代）",cap:"",a:"",b:"",target:""},
+    {n:"Aelark滤器（II代）",cap:"",a:"",b:"",target:""},
+    {n:"Fitaya滤器（III代）",cap:"",a:"",b:"",target:""},
     {n:"Aelix三环抓捕器",cap:"",a:"",b:"",target:""},
+    {n:"FiQure滤器回收套件",cap:"",a:"",b:"",target:""},
     {n:"Yuranos二代腹主",cap:"",a:"",b:"",target:""},
     {n:"Ankura II胸主",cap:"",a:"",b:"",target:""},
-    {n:"FiQure滤器回收套件",cap:"",a:"",b:"",target:""},
+    {n:"Ankura IIc胸主",cap:"",a:"",b:"",target:""},
+    {n:"主动脉覆膜支架系统",cap:"",a:"",b:"",target:""},
+    {n:"主动脉弓支架系统",cap:"",a:"",b:"",target:""},
+    {n:"G-iliac主体",cap:"",a:"",b:"",target:""},
+    {n:"ZoeTrack超硬导丝",cap:"",a:"",b:"",target:""},
+    {n:"LawMax穿刺扩张器",cap:"",a:"",b:"",target:""},
+    {n:"SeQure单环抓捕器",cap:"",a:"",b:"",target:""},
     {n:"Fustar可调弯鞘",cap:"",a:"",b:"",target:""},
+    {n:"Fusta mini可调弯导管",cap:"",a:"",b:"",target:""},
+    {n:"Futhrough穿刺球囊",cap:"",a:"",b:"",target:""},
+    {n:"Futhrough主动脉扩张大球囊",cap:"",a:"",b:"",target:""},
+    {n:"35系统外周普通球囊",cap:"",a:"",b:"",target:""},
+    {n:"18系统外周普通球囊",cap:"",a:"",b:"",target:""},
+    {n:"外周血栓抽吸导管",cap:"",a:"",b:"",target:""},
   ];
   const[products,setProducts]=useState(init);
+  const[selectedHosps,setSelectedHosps]=useState([0,2,6]);
   const[hospIdx,setHospIdx]=useState(0);
-  const hosps=["达州市中心医院","遂宁市中心医院","资阳市中心医院"];
+  const[showDropdown,setShowDropdown]=useState(false);
+  const hosps=selectedHosps.map(i=>allHosps[i]);
+  const toggleHosp=i=>{setSelectedHosps(prev=>prev.includes(i)?prev.filter(x=>x!==i):[...prev,i]);};
   const upd=useCallback((i,f,v)=>{setProducts(p=>{const n=[...p];n[i]={...n[i],[f]:v};return n;});},[]);
 
   const calc=useMemo(()=>products.map(p=>{
@@ -243,7 +262,7 @@ function SubmitPage(){
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:10}}>
       <div>
         <div style={{fontWeight:700,fontSize:16,color:G.text}}>授权申请</div>
-        <div style={{fontSize:12,color:G.text3,marginTop:3}}>成都诚佳欣浩商贸有限公司 · 吴超</div>
+        <div style={{fontSize:12,color:G.text3,marginTop:3}}>成都诚佳欣浩商贸有限公司 / 上海赟禾科贸中心 / 上海吴铠科贸有限公司 · 吴超</div>
       </div>
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
         <TierBadge rev={2200}/><RegionBadge region="西南区"/><span style={{fontSize:10,color:G.text3}}>← 自动匹配</span>
@@ -255,16 +274,27 @@ function SubmitPage(){
       <div style={{padding:"5px 12px",fontSize:12,borderRadius:8,background:"transparent",color:G.text3,border:"1px solid "+G.border,cursor:"pointer"}}>销售主管复核发起</div>
     </div>
     <Divider/>
-    <div style={{fontSize:12,color:G.text3,marginBottom:6}}>第一步：选择医院（逐家提交）</div>
-    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
-      {hosps.map((h,i)=><span key={i} style={{fontSize:12,padding:"5px 12px",borderRadius:8,background:G.goldBg2,color:G.goldL}}>{h} ×</span>)}
-      <span style={{fontSize:12,padding:"5px 12px",borderRadius:8,border:"1px dashed "+G.border2,color:G.text3,cursor:"pointer"}}>+ 添加</span>
+    <div style={{fontSize:12,color:G.text3,marginBottom:6}}>第一步：选择医院（逐家提交，共{allHosps.length}家可选）</div>
+    <div style={{position:"relative",marginBottom:12}}>
+      <div onClick={()=>setShowDropdown(!showDropdown)} style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+G.border2,background:G.bg3,color:G.goldL,fontSize:12,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span>{selectedHosps.length>0?"已选 "+selectedHosps.length+" 家医院":"点击选择医院"}</span>
+        <span style={{color:G.text3}}>{showDropdown?"▲":"▼"}</span>
+      </div>
+      {showDropdown&&<div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:10,background:G.bg2,border:"1px solid "+G.border2,borderRadius:8,maxHeight:200,overflowY:"auto",marginTop:4}}>
+        {allHosps.map((h,i)=><div key={i} onClick={()=>toggleHosp(i)} style={{padding:"8px 12px",fontSize:12,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid "+G.border,color:selectedHosps.includes(i)?G.goldL:G.text2,background:selectedHosps.includes(i)?G.goldBg:"transparent"}}>
+          <span>{h}</span>
+          {selectedHosps.includes(i)&&<span style={{color:G.gold}}>✓</span>}
+        </div>)}
+      </div>}
+      {selectedHosps.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:8}}>
+        {hosps.map((h,i)=><span key={i} onClick={()=>toggleHosp(selectedHosps[i])} style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:G.goldBg2,color:G.goldL,cursor:"pointer"}}>{h} ×</span>)}
+      </div>}
     </div>
     <Divider/>
-    <div style={{fontSize:12,color:G.text3,marginBottom:8}}>第二步：填写产品数据（可留空，由销售或系统自动补充）</div>
-    <div style={{display:"flex",gap:4,marginBottom:10}}>
-      {hosps.map((h,i)=><div key={i} onClick={()=>setHospIdx(i)} style={{padding:"5px 12px",fontSize:12,borderRadius:8,cursor:"pointer",background:hospIdx===i?G.goldBg2:"transparent",color:hospIdx===i?G.goldL:G.text3,border:"1px solid "+(hospIdx===i?G.border2:G.border),fontWeight:hospIdx===i?600:400}}>{h}</div>)}
-    </div>
+    <div style={{fontSize:12,color:G.text3,marginBottom:8}}>第二步：为选定医院填写产品数据（可留空，由销售或系统自动补充）</div>
+    {hosps.length>0&&<div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap",overflowX:"auto"}}>
+      {hosps.map((h,i)=><div key={i} onClick={()=>setHospIdx(i)} style={{padding:"5px 10px",fontSize:11,borderRadius:8,cursor:"pointer",background:hospIdx===i?G.goldBg2:"transparent",color:hospIdx===i?G.goldL:G.text3,border:"1px solid "+(hospIdx===i?G.border2:G.border),fontWeight:hospIdx===i?600:400,whiteSpace:"nowrap"}}>{h}</div>)}
+    </div>}
     <div style={{background:G.goldBg,border:"1px solid "+G.border,borderRadius:8,padding:"8px 12px",fontSize:12,color:G.gold,marginBottom:10,lineHeight:1.6}}>
       <b>总容量</b> = 该医院该术式所有品牌年植入总量（含竞品），用于计算我司占有率。留空由运营补充。
     </div>
@@ -297,7 +327,7 @@ function SubmitPage(){
     </div>
     <div style={{marginTop:14,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
       <span style={{fontSize:12,color:G.text3}}>审批链：一线销售/主管 → 黄占良 → 孔颖佳 → 周小杰 → 吴璟谊</span>
-      <button style={{padding:"8px 22px",borderRadius:8,border:"none",background:G.gold,color:G.bg,fontSize:13,fontWeight:700,cursor:"pointer"}}>提交（3家医院）</button>
+      <button style={{padding:"8px 22px",borderRadius:8,border:"none",background:G.gold,color:G.bg,fontSize:13,fontWeight:700,cursor:"pointer"}}>{"提交（"+hosps.length+"家医院）"}</button>
     </div>
   </Card>;
 }
