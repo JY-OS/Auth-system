@@ -47,11 +47,11 @@ const tierDefs=[
   {name:"新锐之星",min:100,color:"#60A5FA",rule:"100-500万"},
 ];
 const approvalChains={
-  "西南区":{type:"long",sales:"一线销售/主管",regional:"黄占良（大区经理）",senior:"孔颖佳（高级大区经理）",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
+  "西南区":{type:"long",sales:"一线销售/主管",area:"刘经理（区域经理）",regional:"黄占良（大区经理）",senior:"孔颖佳（高级大区经理）",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
   "东区":{type:"short",sales:"一线经理",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
   "北一区":{type:"short",sales:"一线经理",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
   "北二区":{type:"short",sales:"一线经理",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
-  "华南区":{type:"long",sales:"一线销售/主管",regional:"黄涛（大区经理）",senior:"何军（高级大区经理）",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
+  "华南区":{type:"long",sales:"一线销售/主管",area:"陈经理（区域经理）",regional:"黄涛（大区经理）",senior:"何军（高级大区经理）",national:"周小杰（全国经理）",director:"吴璟谊（销售总监）"},
 };
 const typeDefs=["一级代理商","二级代理商","配送端口"];
 const yearDefs=[
@@ -93,11 +93,12 @@ function FlowPage(){
   const isLong=chain.type==="long";
 
   const steps=[
-    {title:"经销商发起申请",sub:"选医院 → 选产品 → 填数据 → 提交",color:G.gold,bgColor:G.goldBg2,borderColor:G.border2,icon:"📋"},
+    {title:"授权申请发起",sub:"代理商申请 / 一线销售提出申请 / 销售主管复核发起",color:G.gold,bgColor:G.goldBg2,borderColor:G.border2,icon:"📋"},
     {title:"销售运营核验",sub:"系统自动匹配历史植入数据，标注差异",color:"#60A5FA",bgColor:"rgba(96,165,250,0.12)",borderColor:"rgba(96,165,250,0.25)",icon:"🔍",auto:true},
-    {title:chain.sales,sub:"确认经销商实际情况，填写意见",color:"#FB923C",bgColor:"rgba(251,146,60,0.1)",borderColor:"rgba(251,146,60,0.25)",icon:"👤",eye:isLong?"大区经理及以上同步可见":"全国经理及销售总监同步可见",note:"视区域和销售成熟度而定，可由上级配置跳过"},
+    {title:chain.sales,sub:"确认经销商实际情况，填写意见",color:"#FB923C",bgColor:"rgba(251,146,60,0.1)",borderColor:"rgba(251,146,60,0.25)",icon:"👤",eye:isLong?"区域经理及以上同步可见":"全国经理及销售总监同步可见",note:"视区域和销售成熟度而定，可由上级配置跳过"},
   ];
   if(isLong){
+    steps.push({title:chain.area,sub:"审核一线销售意见，确认区域情况",color:"#FB923C",bgColor:"rgba(251,146,60,0.06)",borderColor:"rgba(251,146,60,0.2)",icon:"📋",eye:"大区经理及以上同步可见"});
     steps.push({title:chain.regional,sub:"审核数据合理性，逐产品审批",color:"#A78BFA",bgColor:"rgba(167,139,250,0.1)",borderColor:"rgba(167,139,250,0.25)",icon:"👔",eye:"高级大区经理及以上同步可见"});
     steps.push({title:chain.senior,sub:"复核大区整体授权合理性",color:"#C084FC",bgColor:"rgba(192,132,252,0.1)",borderColor:"rgba(192,132,252,0.25)",icon:"🎖️",eye:"全国经理及销售总监同步可见"});
   }
@@ -105,7 +106,7 @@ function FlowPage(){
   steps.push({title:chain.director,sub:"最终审批确认",color:"#FFD700",bgColor:"rgba(255,215,0,0.08)",borderColor:"rgba(255,215,0,0.2)",icon:"👑"});
   steps.push({title:"授权生效 → 通知商务部",sub:"系统自动生成授权书，自动通知商务部发放授权文件给经销商",color:G.green,bgColor:G.greenBg,borderColor:"rgba(74,222,128,0.25)",icon:"✅",auto:true});
 
-  const allViewers=isLong?[chain.regional,chain.senior,chain.national,chain.director].map(s=>s.split("（")[0]).join("、"):[chain.national,chain.director].map(s=>s.split("（")[0]).join("、");
+  const allViewers=isLong?[chain.area,chain.regional,chain.senior,chain.national,chain.director].map(s=>s.split("（")[0]).join("、"):[chain.national,chain.director].map(s=>s.split("（")[0]).join("、");
 
   return <div>
     <div style={{background:G.goldBg,border:"1px solid "+G.border,borderRadius:10,padding:"12px 16px",marginBottom:14}}>
@@ -121,7 +122,7 @@ function FlowPage(){
     <TabBar items={REGIONS.slice(1)} active={region} onSelect={setRegion}/>
     <div style={{background:G.bg3,border:"1px solid "+G.border,borderRadius:8,padding:"8px 14px",fontSize:12,color:G.text2,marginBottom:12}}>
       {isLong
-        ?<span>🏢 <b style={{color:G.goldL}}>{curR}</b>：一线销售 → 大区经理 → 高级大区经理 → 全国经理 → 销售总监（共5级审批）</span>
+        ?<span>🏢 <b style={{color:G.goldL}}>{curR}</b>：一线销售 → 区域经理 → 大区经理 → 高级大区经理 → 全国经理 → 销售总监（共6级审批）</span>
         :<span>🏢 <b style={{color:G.goldL}}>{curR}</b>：一线经理 → 全国经理 → 销售总监（共3级审批）</span>
       }
     </div>
@@ -154,7 +155,7 @@ function FlowPage(){
         <b style={{color:G.goldL}}>3. 超时提醒：</b>任一节点超过48小时未审批，自动向该审批人及其上级发送催办通知。<br/>
         <b style={{color:G.goldL}}>4. 一线审批弹性：</b>视区域和销售成熟度而定，上级可配置部分区域跳过一线审批环节。<br/>
         <b style={{color:G.goldL}}>5. 自动通知商务：</b>终审通过后，系统自动通知商务部制作并发放正式授权文件给经销商。<br/>
-        <b style={{color:G.goldL}}>6. 区域差异：</b>西南区/华南区为5级审批（含大区经理、高级大区经理），东区/北一区/北二区为3级审批（一线经理直接对接全国经理）。
+        <b style={{color:G.goldL}}>6. 区域差异：</b>西南区/华南区为6级审批（含区域经理、大区经理、高级大区经理），东区/北一区/北二区为3级审批（一线经理直接对接全国经理）。
       </div>
     </Card>
   </div>;
@@ -196,7 +197,7 @@ function HomePage({onNav}){
         <span>经销商</span><span>大区</span><span>级别</span><span>合作</span><span>年订货额</span><span>医院</span>
       </div>
       {filtered.map((d,i)=><div key={i} onClick={()=>onNav(2)} style={{display:"grid",gridTemplateColumns:"2.5fr 0.8fr 0.8fr 0.8fr 0.8fr 0.7fr",padding:"10px 10px",fontSize:13,borderTop:"1px solid "+G.border,cursor:"pointer",alignItems:"center"}}>
-        <div><div style={{fontWeight:600,color:G.text}}>{d.n}</div><div style={{fontSize:11,color:G.text3}}>{d.c}</div></div>
+        <div><div style={{fontWeight:600,color:G.text,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer"}} title={d.n} onClick={e=>{e.stopPropagation();const el=e.target;if(el.style.whiteSpace==="nowrap"){el.style.whiteSpace="normal";el.style.overflow="visible"}else{el.style.whiteSpace="nowrap";el.style.overflow="hidden"}}}>{d.n}</div><div style={{fontSize:11,color:G.text3}}>{d.c}</div></div>
         <span><RegionBadge region={d.r}/></span>
         <span><TierBadge rev={d.rev}/></span>
         <span style={{color:G.text2}}>{d.y}年</span>
@@ -240,12 +241,17 @@ function SubmitPage(){
   return <Card>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:10}}>
       <div>
-        <div style={{fontWeight:700,fontSize:16,color:G.text}}>新建授权申请</div>
+        <div style={{fontWeight:700,fontSize:16,color:G.text}}>授权申请</div>
         <div style={{fontSize:12,color:G.text3,marginTop:3}}>成都诚佳欣浩商贸有限公司 · 吴超</div>
       </div>
       <div style={{display:"flex",gap:6,alignItems:"center"}}>
         <TierBadge rev={2200}/><RegionBadge region="西南区"/><span style={{fontSize:10,color:G.text3}}>← 自动匹配</span>
       </div>
+    </div>
+    <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+      <div style={{padding:"5px 12px",fontSize:12,borderRadius:8,background:G.goldBg2,color:G.goldL,border:"1px solid "+G.border2,fontWeight:600}}>代理商申请</div>
+      <div style={{padding:"5px 12px",fontSize:12,borderRadius:8,background:"transparent",color:G.text3,border:"1px solid "+G.border,cursor:"pointer"}}>一线销售提出申请</div>
+      <div style={{padding:"5px 12px",fontSize:12,borderRadius:8,background:"transparent",color:G.text3,border:"1px solid "+G.border,cursor:"pointer"}}>销售主管复核发起</div>
     </div>
     <Divider/>
     <div style={{fontSize:12,color:G.text3,marginBottom:6}}>第一步：选择医院（逐家提交）</div>
@@ -289,7 +295,7 @@ function SubmitPage(){
       <textarea placeholder="可留空由销售补充..." style={{width:"100%",height:50,fontSize:12,padding:8,borderRadius:8,border:"1px solid "+G.border,background:G.bg3,color:G.text,fontFamily:"inherit",resize:"vertical"}}/>
     </div>
     <div style={{marginTop:14,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-      <span style={{fontSize:12,color:G.text3}}>审批链：一线销售/主管 → 黄占良 → 孔颖佳 → 周小杰 → 吴璟谊</span>
+      <span style={{fontSize:12,color:G.text3}}>审批链：一线销售/主管 → 刘经理 → 黄占良 → 孔颖佳 → 周小杰 → 吴璟谊</span>
       <button style={{padding:"8px 22px",borderRadius:8,border:"none",background:G.gold,color:G.bg,fontSize:13,fontWeight:700,cursor:"pointer"}}>提交（3家医院）</button>
     </div>
   </Card>;
@@ -331,6 +337,7 @@ function DetailPage(){
   const steps=[
     {name:"运营核验",sub:"系统自动 · 03-20 10:30 · 数据一致",st:"done"},
     {name:chain.sales,sub:"审批中 · 上级全部可见",st:"cur"},
+    {name:chain.area,sub:"等待中",st:"f"},
     {name:chain.regional,sub:"等待中",st:"f"},
     {name:chain.senior,sub:"等待中",st:"f"},
     {name:chain.national,sub:"等待中",st:"f"},
@@ -380,7 +387,7 @@ function DetailPage(){
     <div style={{background:G.bg3,borderRadius:10,padding:14,border:"1px solid "+G.border}}>
       <textarea placeholder="审批意见..." style={{width:"100%",height:40,fontSize:13,padding:8,borderRadius:8,border:"1px solid "+G.border,background:G.bg,color:G.text,fontFamily:"inherit",marginBottom:8}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:11,color:G.text3}}>驳回自动通知黄占良（大区经理）</span>
+        <span style={{fontSize:11,color:G.text3}}>驳回自动通知刘经理（区域经理）及以上</span>
         <div style={{display:"flex",gap:8}}>
           <button style={{padding:"6px 16px",borderRadius:8,border:"none",background:G.redBg,color:G.red,fontSize:12,fontWeight:600,cursor:"pointer"}}>驳回</button>
           <button style={{padding:"6px 16px",borderRadius:8,border:"none",background:G.greenBg,color:G.green,fontSize:12,fontWeight:600,cursor:"pointer"}}>通过</button>
@@ -425,7 +432,7 @@ function MyViewPage({onNav}){
 
 function App(){
   const[tab,setTab]=useState(0);
-  const TABS=["审批流程","首页总览","经销商提交","审批看板","审批详情","我的视野"];
+  const TABS=["审批流程","首页总览","授权申请","审批看板","审批详情","我的视野"];
   return <div style={{background:G.bg,minHeight:"100vh",padding:"20px 16px",fontFamily:"'SF Pro Display',-apple-system,sans-serif"}}>
     <div style={{maxWidth:900,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
